@@ -66,11 +66,9 @@ Music-Player/
 ### 1. Clone the repository
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
+git clone https://github.com/SarthakChumbalkar/Music-Player.git
 cd Music-Player
 ```
-
-Replace `<YOUR_REPOSITORY_URL>` with your GitHub repository URL.
 
 ### 2. Install a C++ compiler
 
