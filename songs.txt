@@ -1,0 +1,10 @@
+
+1|Alag Aasmaan|Anuv Jain|Alag Aasmaan - Single|2020|alag_aasmaan.mp3|alag_aasmaan.txt
+2|Arz Kiya Hai|Anuv Jain|Coke Studio Bharat Season 3|2025|arz_kiya_hai.mp3|arz_kiya_hai.txt
+3|Badtameez Dil|Benny Dayal, Shefali Alvares|Yeh Jawaani Hai Deewani|2013|badtameez_dil.mp3|badtameez_dil.txt
+4|Chaand Taare|Abhijeet Bhattacharya|Yes Boss|1997|chaand_taare.mp3|chaand_taare.txt
+5|Dil Chahta Hai|Shankar Mahadevan|Dil Chahta Hai|2001|dil_chahta_hai.mp3|dil_chahta_hai.txt
+6|I Am the Best|Abhijeet Bhattacharya|Phir Bhi Dil Hai Hindustani|2000|i_am_the_best.mp3|i_am_the_best.txt
+7|Ilahi|Arijit Singh|Yeh Jawaani Hai Deewani|2013|ilahi.mp3|ilahi.txt
+8|Mitwa|Shafqat Amanat Ali, Caralisa Monteiro|Kabhi Alvida Naa Kehna|2006|mitwa.mp3|mitwa.txt
+9|Phir Se Ud Chala|Mohit Chauhan|Rockstar|2011|phir_se_ud_chala.mp3|phir_se_ud_chala.txt
