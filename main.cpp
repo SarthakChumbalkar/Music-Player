@@ -1,252 +1,432 @@
-#include <iostream>    // for input and output
-#include <fstream>     // for file operations
-#include <sstream>     // for reading database fields
-#include <vector>      // for storing songs
-#include <string>      // for handling text
-#include <filesystem>  // for file paths
-#include <cctype>      // for character handling
-#include <cstdlib>     // for system commands
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <filesystem>
+#include <cctype>
+#include <cstdlib>
+#include <windows.h>
+#include <shellapi.h>
 
 using namespace std;
 namespace fs = std::filesystem;
 
-// Store details of each song
+const int MAX_SONGS = 100;
+
 struct Song {
     int id, year;
     string title, artist, album, audio, lyrics;
 };
 
-vector<Song> songs;
+Song songs[MAX_SONGS];
+int songCount = 0;
 
-// Remove spaces and special characters for searching
-string normalize(string text) {
+// Singly linked list for the playback queue.
+struct QueueNode {
+    Song song;
+    QueueNode* next;
+};
+
+QueueNode* front = nullptr;
+QueueNode* rear = nullptr;
+
+string normalize(const string& text) {
     string result;
 
-    for (unsigned char c : text) {
-        if (isalnum(c))
-            result += static_cast<char>(tolower(c));
+    for (unsigned char ch : text) {
+        if (isalnum(ch))
+            result += static_cast<char>(tolower(ch));
     }
 
     return result;
 }
 
-// Clear the terminal screen
 void clearScreen() {
     system("cls");
 }
 
-// Wait before returning to the menu
 void pauseScreen() {
     cout << "\nPress Enter to continue...";
     cin.get();
 }
 
-// Load song details from songs.txt
 void loadSongs() {
     ifstream file("songs.txt");
-    string line;
 
     if (!file) {
-        cout << "Cannot open songs.txt\n";
+        cout << "Error: songs.txt could not be opened.\n";
         return;
     }
 
-    while (getline(file, line)) {
+    string line;
+
+    while (getline(file, line) && songCount < MAX_SONGS) {
+        string data[7];
         stringstream ss(line);
-        vector<string> data;
-        string field;
 
-        while (getline(ss, field, '|'))
-            data.push_back(field);
+        for (int i = 0; i < 7; i++)
+            getline(ss, data[i], '|');
 
-        if (data.size() != 7)
+        if (data[0].empty() || data[4].empty())
             continue;
 
         try {
-            Song s;
-
-            s.id = stoi(data[0]);
-            s.title = data[1];
-            s.artist = data[2];
-            s.album = data[3];
-            s.year = stoi(data[4]);
-            s.audio = data[5];
-            s.lyrics = data[6];
-
-            songs.push_back(s);
+            songs[songCount].id = stoi(data[0]);
+            songs[songCount].title = data[1];
+            songs[songCount].artist = data[2];
+            songs[songCount].album = data[3];
+            songs[songCount].year = stoi(data[4]);
+            songs[songCount].audio = data[5];
+            songs[songCount].lyrics = data[6];
+            songCount++;
         }
         catch (...) {
-            cout << "Skipping invalid song data.\n";
+            cout << "Invalid song record skipped: " << line << '\n';
         }
     }
+
+    file.close();
 }
 
-// Display details of one song
-void displaySong(const Song& s) {
-    cout << "\n------------------------------\n";
-    cout << "ID     : " << s.id << '\n';
-    cout << "Title  : " << s.title << '\n';
-    cout << "Artist : " << s.artist << '\n';
-    cout << "Album  : " << s.album << '\n';
-    cout << "Year   : " << s.year << '\n';
-    cout << "------------------------------\n";
+void displaySong(const Song& song) {
+    cout << "\nID: " << song.id;
+    cout << "\nTitle: " << song.title;
+    cout << "\nArtist: " << song.artist;
+    cout << "\nAlbum: " << song.album;
+    cout << "\nYear: " << song.year;
+    cout << "\n-----------------------------\n";
 }
 
-// Display all songs
 void displayAll() {
-    for (const Song& s : songs)
-        displaySong(s);
-}
-
-// Linear Search by title, artist, or album
-void linearSearch(string key, int type) {
-    key = normalize(key);
-    bool found = false;
-
-    if (key.empty()) {
-        cout << "Enter a valid keyword.\n";
+    if (songCount == 0) {
+        cout << "\nNo songs found.\n";
         return;
     }
 
-    for (const Song& s : songs) {
+    for (int i = 0; i < songCount; i++)
+        displaySong(songs[i]);
+}
+
+Song* findSongById(int id) {
+    for (int i = 0; i < songCount; i++) {
+        if (songs[i].id == id)
+            return &songs[i];
+    }
+
+    return nullptr;
+}
+
+// Linear search by title, artist, or album.
+void linearSearch(const string& key, int type) {
+    string searchKey = normalize(key);
+
+    if (searchKey.empty()) {
+        cout << "\nPlease enter a search keyword.\n";
+        return;
+    }
+
+    bool found = false;
+
+    for (int i = 0; i < songCount; i++) {
         string value;
 
         if (type == 1)
-            value = s.title;
+            value = songs[i].title;
         else if (type == 2)
-            value = s.artist;
+            value = songs[i].artist;
         else
-            value = s.album;
+            value = songs[i].album;
 
-        if (normalize(value).find(key) != string::npos) {
-            displaySong(s);
+        if (normalize(value).find(searchKey) != string::npos) {
+            displaySong(songs[i]);
             found = true;
         }
     }
 
     if (!found)
-        cout << "No matching song found.\n";
+        cout << "\nNo matching song found.\n";
 }
 
-// Linear Search through lyrics files
-void searchLyrics(string key) {
-    key = normalize(key);
-    bool found = false;
+// Search lyrics files for a keyword.
+void searchLyrics(const string& key) {
+    string searchKey = normalize(key);
 
-    if (key.empty()) {
-        cout << "Enter a valid keyword.\n";
+    if (searchKey.empty()) {
+        cout << "\nPlease enter a lyrics keyword.\n";
         return;
     }
 
-    for (const Song& s : songs) {
-        ifstream file(fs::path("lyrics") / s.lyrics);
-        string line, text;
+    bool found = false;
+
+    for (int i = 0; i < songCount; i++) {
+        if (songs[i].lyrics.empty())
+            continue;
+
+        string path = "lyrics/" + songs[i].lyrics;
+        ifstream file(path);
 
         if (!file)
             continue;
 
-        while (getline(file, line))
-            text += line;
+        string line;
+        string content;
 
-        // Ignore spaces and punctuation in lyrics
-        if (normalize(text).find(key) != string::npos) {
-            displaySong(s);
+        while (getline(file, line))
+            content += line + " ";
+
+        file.close();
+
+        if (normalize(content).find(searchKey) != string::npos) {
+            displaySong(songs[i]);
             found = true;
         }
     }
 
     if (!found)
-        cout << "No matching lyrics found.\n";
+        cout << "\nNo song found with that lyrics keyword.\n";
 }
 
-// Open a song in the default Windows music player
-void playSong(string key) {
-    key = normalize(key);
+// Open a song using the Windows default application.
+bool playAudio(const string& path) {
+    if (!fs::exists(path)) {
+        cout << "\nAudio file not found: "
+             << fs::absolute(path) << '\n';
 
-    if (key.empty()) {
-        cout << "Enter a valid song title.\n";
+        return true; // Skip missing files.
+    }
+
+    string fullPath = fs::absolute(path).string();
+
+    SHELLEXECUTEINFOA info{};
+    info.cbSize = sizeof(info);
+    info.fMask = SEE_MASK_NOCLOSEPROCESS;
+    info.lpVerb = "open";
+    info.lpFile = fullPath.c_str();
+    info.nShow = SW_SHOWNORMAL;
+
+    if (!ShellExecuteExA(&info)) {
+        DWORD errorCode = GetLastError();
+
+        cout << "\nUnable to open song in the default media player.\n";
+        cout << "File: " << fullPath << '\n';
+        cout << "Windows error: " << errorCode << '\n';
+
+        return true; // Skip and try the next queued song.
+    }
+
+    cout << "\nOpened in default media player: " << path << '\n';
+
+    // Some media apps do not provide a process handle.
+    if (info.hProcess == nullptr) {
+        cout << "Windows did not provide a media-player process handle.\n";
+        cout << "After closing the media player, press Enter here to continue.\n";
+        cin.get();
+        return true;
+    }
+
+    DWORD waitResult = WaitForSingleObject(info.hProcess, INFINITE);
+    CloseHandle(info.hProcess);
+
+    if (waitResult == WAIT_FAILED) {
+        DWORD errorCode = GetLastError();
+
+        cout << "\nCould not wait for the media player to close.\n";
+        cout << "Windows error: " << errorCode << '\n';
+
+        return false;
+    }
+
+    return true;
+}
+
+void playSong(const string& key) {
+    string searchKey = normalize(key);
+
+    if (searchKey.empty()) {
+        cout << "\nPlease enter a song title.\n";
         return;
     }
 
-    for (const Song& s : songs) {
-        if (normalize(s.title).find(key) != string::npos) {
-            fs::path path = fs::path("music") / s.audio;
-
-            if (!fs::exists(path)) {
-                cout << "Music file not found: "
-                     << path.string() << '\n';
-                return;
-            }
-
-            string command = "start \"\" \"" + path.string() + "\"";
-            system(command.c_str());
-
-            cout << "Opened: " << s.title << '\n';
+    for (int i = 0; i < songCount; i++) {
+        if (normalize(songs[i].title).find(searchKey)
+            != string::npos) {
+            playAudio("music/" + songs[i].audio);
             return;
         }
     }
 
-    cout << "Song not found.\n";
+    cout << "\nSong not found.\n";
 }
 
-// Bubble Sort: arrange songs alphabetically by title
-void bubbleSort(vector<Song>& list) {
-    int n = static_cast<int>(list.size());
+// Add a song to the end of the linked-list queue.
+void enqueue(const Song& song) {
+    QueueNode* newNode = new QueueNode{song, nullptr};
 
-    for (int i = 0; i < n - 1; i++) {
-        bool swapped = false;
-
-        for (int j = 0; j < n - i - 1; j++) {
-            if (normalize(list[j].title) >
-                normalize(list[j + 1].title)) {
-
-                Song temp = list[j];
-                list[j] = list[j + 1];
-                list[j + 1] = temp;
-
-                swapped = true;
-            }
-        }
-
-        // Stop if the list is already sorted
-        if (!swapped)
-            break;
+    if (rear == nullptr) {
+        front = rear = newNode;
+    }
+    else {
+        rear->next = newNode;
+        rear = newNode;
     }
 }
 
-// Sort songs using our own Bubble Sort
-void sortSongs() {
-    bubbleSort(songs);
+// Remove the first node.
+bool dequeue(Song& song) {
+    if (front == nullptr)
+        return false;
 
-    cout << "Songs sorted by title.\n";
-    displayAll();
+    QueueNode* temp = front;
+    song = temp->song;
+    front = front->next;
+
+    if (front == nullptr)
+        rear = nullptr;
+
+    delete temp;
+    return true;
 }
 
-// Binary Search for an exact song title
-void binarySearch(string key) {
-    key = normalize(key);
+void clearQueue() {
+    Song temp;
 
-    if (key.empty()) {
-        cout << "Enter a valid song title.\n";
+    while (dequeue(temp)) {
+    }
+}
+
+void displayQueue() {
+    if (front == nullptr) {
+        cout << "\nQueue is empty.\n";
         return;
     }
 
-    // Sort a copy before performing Binary Search
-    vector<Song> sorted = songs;
-    bubbleSort(sorted);
+    QueueNode* current = front;
+    int position = 1;
+
+    cout << "\n--- Playback Queue ---\n";
+
+    while (current != nullptr) {
+        cout << position++ << ". "
+             << current->song.title << " - "
+             << current->song.artist << '\n';
+
+        current = current->next;
+    }
+}
+
+// Open each song in sequence, moving forward through the list.
+void playQueue() {
+    QueueNode* current = front;
+
+    while (current != nullptr) {
+        cout << "\nNow opening: " << current->song.title << '\n';
+
+        bool canContinue =
+            playAudio("music/" + current->song.audio);
+
+        if (!canContinue)
+            break;
+
+        current = current->next;
+    }
+
+    clearQueue();
+    cout << "\nQueue playback finished.\n";
+}
+
+void createQueueAndPlay() {
+    clearQueue();
+    displayAll();
+
+    if (songCount == 0)
+        return;
+
+    cout << "\nEnter song IDs separated by spaces: ";
+
+    string input;
+    getline(cin, input);
+
+    stringstream ss(input);
+    int id;
+    bool added = false;
+
+    while (ss >> id) {
+        Song* song = findSongById(id);
+
+        if (song != nullptr) {
+            enqueue(*song);
+            added = true;
+        }
+        else {
+            cout << "Invalid song ID: " << id << '\n';
+        }
+    }
+
+    if (!added) {
+        cout << "\nNo valid songs added to queue.\n";
+        return;
+    }
+
+    displayQueue();
+    playQueue();
+}
+
+// Bubble sort by normalized song title.
+void bubbleSort(Song list[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (normalize(list[j].title) >
+                normalize(list[j + 1].title)) {
+                Song temp = list[j];
+                list[j] = list[j + 1];
+                list[j + 1] = temp;
+            }
+        }
+    }
+}
+
+void sortSongs() {
+    bubbleSort(songs, songCount);
+
+    cout << "\nSongs sorted by title.\n";
+    displayAll();
+}
+
+// Binary search for an exact normalized title.
+void binarySearch(const string& key) {
+    if (songCount == 0) {
+        cout << "\nNo songs available.\n";
+        return;
+    }
+
+    string searchKey = normalize(key);
+
+    if (searchKey.empty()) {
+        cout << "\nPlease enter a song title.\n";
+        return;
+    }
+
+    Song sorted[MAX_SONGS];
+
+    for (int i = 0; i < songCount; i++)
+        sorted[i] = songs[i];
+
+    bubbleSort(sorted, songCount);
 
     int low = 0;
-    int high = static_cast<int>(sorted.size()) - 1;
+    int high = songCount - 1;
 
     while (low <= high) {
         int mid = low + (high - low) / 2;
         string title = normalize(sorted[mid].title);
 
-        if (title == key) {
+        if (title == searchKey) {
+            cout << "\nSong found:\n";
             displaySong(sorted[mid]);
             return;
         }
-        else if (title < key) {
+        else if (title < searchKey) {
             low = mid + 1;
         }
         else {
@@ -254,93 +434,113 @@ void binarySearch(string key) {
         }
     }
 
-    cout << "Song not found.\n";
+    cout << "\nExact song title not found.\n";
 }
 
-// Main menu
 int main() {
     loadSongs();
 
-    if (songs.empty()) {
-        cout << "No songs loaded. Check songs.txt.\n";
-        return 0;
-    }
-
-    string choice, key;
+    int choice = 0;
 
     do {
         clearScreen();
 
-        cout << "====================================\n";
-        cout << "       MUSIC PLAYER SEARCH SYSTEM\n";
-        cout << "====================================\n";
-        cout << "Total Songs: " << songs.size() << '\n';
-        cout << "------------------------------------\n";
+        cout << "===== MUSIC PLAYER SEARCH SYSTEM =====\n";
         cout << "1. Display All Songs\n";
         cout << "2. Search by Song Title\n";
         cout << "3. Search by Artist\n";
         cout << "4. Search by Album\n";
         cout << "5. Search by Lyrics Keyword\n";
         cout << "6. Play a Song\n";
-        cout << "7. Sort Songs by Title\n";
-        cout << "8. Binary Search by Exact Title\n";
-        cout << "9. Exit\n";
-        cout << "====================================\n";
-        cout << "Enter choice: ";
+        cout << "7. Create Queue and Play Songs\n";
+        cout << "8. Sort Songs by Title\n";
+        cout << "9. Binary Search by Exact Title\n";
+        cout << "10. Exit\n";
 
-        getline(cin, choice);
+        cout << "\nEnter your choice: ";
 
-        if (choice == "9")
-            break;
+        if (!(cin >> choice)) {
+            cin.clear();
+            cin.ignore(10000, '\n');
 
-        clearScreen();
-
-        if (choice == "1") {
-            displayAll();
-        }
-        else if (choice == "2") {
-            cout << "Enter song title: ";
-            getline(cin, key);
-            linearSearch(key, 1);
-        }
-        else if (choice == "3") {
-            cout << "Enter artist name: ";
-            getline(cin, key);
-            linearSearch(key, 2);
-        }
-        else if (choice == "4") {
-            cout << "Enter album name: ";
-            getline(cin, key);
-            linearSearch(key, 3);
-        }
-        else if (choice == "5") {
-            cout << "Enter lyrics keyword: ";
-            getline(cin, key);
-            searchLyrics(key);
-        }
-        else if (choice == "6") {
-            cout << "Enter song title: ";
-            getline(cin, key);
-            playSong(key);
-        }
-        else if (choice == "7") {
-            sortSongs();
-        }
-        else if (choice == "8") {
-            cout << "Enter exact song title: ";
-            getline(cin, key);
-            binarySearch(key);
-        }
-        else {
-            cout << "Invalid choice. Try again.\n";
+            cout << "\nInvalid input.\n";
+            pauseScreen();
+            continue;
         }
 
-        pauseScreen();
+        cin.ignore(10000, '\n');
 
-    } while (true);
+        string key;
 
-    clearScreen();
-    cout << "Thank you for using Music Player!\n";
+        switch (choice) {
+            case 1:
+                displayAll();
+                pauseScreen();
+                break;
+
+            case 2:
+                cout << "Enter song title: ";
+                getline(cin, key);
+                linearSearch(key, 1);
+                pauseScreen();
+                break;
+
+            case 3:
+                cout << "Enter artist name: ";
+                getline(cin, key);
+                linearSearch(key, 2);
+                pauseScreen();
+                break;
+
+            case 4:
+                cout << "Enter album name: ";
+                getline(cin, key);
+                linearSearch(key, 3);
+                pauseScreen();
+                break;
+
+            case 5:
+                cout << "Enter lyrics keyword: ";
+                getline(cin, key);
+                searchLyrics(key);
+                pauseScreen();
+                break;
+
+            case 6:
+                cout << "Enter song title: ";
+                getline(cin, key);
+                playSong(key);
+                pauseScreen();
+                break;
+
+            case 7:
+                createQueueAndPlay();
+                pauseScreen();
+                break;
+
+            case 8:
+                sortSongs();
+                pauseScreen();
+                break;
+
+            case 9:
+                cout << "Enter exact song title: ";
+                getline(cin, key);
+                binarySearch(key);
+                pauseScreen();
+                break;
+
+            case 10:
+                clearQueue();
+                cout << "\nExiting Music Player.\n";
+                break;
+
+            default:
+                cout << "\nInvalid choice.\n";
+                pauseScreen();
+        }
+
+    } while (choice != 10);
 
     return 0;
 }

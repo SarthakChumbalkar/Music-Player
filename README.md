@@ -1,93 +1,58 @@
-# 🎵 Music Player Search System
+# Music Player Search System
 
-A console-based Music Player Search System developed in C++ as a **Data Structures and Algorithms (DSA) micro project**. It allows users to search songs using metadata and keywords in lyrics, sort the music library, and open local audio files.
+A C++ console-based Music Player Search System developed as a Data Structures and Algorithms (DSA) micro project. The program loads song details from a text file, searches songs and lyrics, sorts the library, searches for exact titles, and plays a user-selected queue through the Windows default media player.
 
-## 📌 Project Overview
+## Features
 
-The system maintains a music library containing song titles, artists, albums, release years, and filenames. Users can search the library using Linear Search and Binary Search. Bubble Sort is implemented manually to arrange songs alphabetically without using built-in sorting functions.
+- Display all songs with their IDs, titles, artists, albums, and release years.
+- Search songs by title, artist, or album.
+- Search lyrics using a keyword.
+- Play an individual song using the Windows default application associated with the audio file.
+- Create a playback queue by entering song IDs.
+- Move to the next queue entry after the current media-player process closes.
+- Sort songs alphabetically by title using Bubble Sort.
+- Search for an exact title using Binary Search.
+- Normalize search text by ignoring case, spaces, and punctuation.
 
-## ✨ Features
+## Technologies Used
 
-- **Display All Songs:** View all songs stored in the library.
-- **Search by Song Title:** Find songs using full or partial titles.
-- **Search by Artist:** Find songs using an artist's name.
-- **Search by Album:** Find songs belonging to an album.
-- **Lyrics Keyword Search:** Search words and phrases inside lyrics text files.
-- **Play a Song:** Open a local MP3 using the default Windows audio application.
-- **Manual Bubble Sort:** Sort songs alphabetically by title.
-- **Binary Search:** Find a song using its exact title.
-- **Text Normalization:** Ignore capitalization, spaces, and punctuation during searches.
-- **File Handling:** Load metadata and lyrics from text files.
+- **Language:** C++
+- **Standard:** C++17
+- **Data structures:** Array and singly linked list
+- **Algorithms:** Linear Search, Bubble Sort, Binary Search
+- **File handling:** C++ file streams (`ifstream`)
+- **Windows integration:** `ShellExecuteExA` to open audio files with the default media application
+- **Build tools:** MinGW-w64 / GCC (for example, MSYS2 UCRT64)
 
-## 🧠 DSA Concepts Used
-
-| Concept | Application |
-|---|---|
-| Structure (`struct`) | Stores song details in one record |
-| Vector | Stores the music library dynamically |
-| Linear Search | Searches titles, artists, albums, and lyrics |
-| Bubble Sort | Manually sorts song titles alphabetically |
-| Binary Search | Searches for an exact title in sorted data |
-| File Handling | Reads song metadata and lyrics from files |
-| String Processing | Normalizes text for easier searching |
-
-**Note:** Sorting is implemented manually using Bubble Sort. The program does not use `std::sort()` or the `<algorithm>` library.
-
-## 🛠️ Technologies Used
-
-- C++
-- Standard Template Library (STL) containers and strings
-- GCC/G++ compiler
-- Visual Studio Code
-- Text files for metadata and lyrics
-
-## 📂 Project Structure
+## Project Structure
 
 ```text
 Music-Player/
-│
 ├── main.cpp
+├── README.md
 ├── songs.txt
 ├── music/
 │   ├── alag_aasmaan.mp3
 │   ├── arz_kiya_hai.mp3
-│   ├── badtameez_dil.mp3
 │   └── ...
-│
 └── lyrics/
     ├── alag_aasmaan.txt
     ├── arz_kiya_hai.txt
-    ├── badtameez_dil.txt
     └── ...
 ```
 
-## ⚙️ Setup and Installation
+### File descriptions
 
-### 1. Clone the repository
+| File or folder | Purpose |
+|---|---|
+| `main.cpp` | Contains the menu, searching and sorting algorithms, linked-list queue, and playback functions. |
+| `songs.txt` | Stores the metadata for each song. |
+| `music/` | Contains the audio files. |
+| `lyrics/` | Contains lyrics text files used by the lyrics-search feature. |
 
-```bash
-git clone https://github.com/SarthakChumbalkar/Music-Player.git
-cd Music-Player
-```
+## Song Database Format
 
-### 2. Install a C++ compiler
-
-Install GCC/G++ and ensure that the `g++` command is available in your terminal.
-
-Verify the installation:
-
-```bash
-g++ --version
-```
-
-### 3. Prepare the music library
-
-- Keep `songs.txt` in the project root.
-- Place MP3 files inside the `music/` folder.
-- Place the corresponding lyrics text files inside the `lyrics/` folder.
-- Ensure the filenames match the entries in `songs.txt`.
-
-The database uses this format:
+Each line in `songs.txt` represents one song. Fields are separated by the pipe character (`|`) in this order:
 
 ```text
 ID|Title|Artist|Album|Year|AudioFilename|LyricsFilename
@@ -97,92 +62,187 @@ Example:
 
 ```text
 1|Alag Aasmaan|Anuv Jain|Alag Aasmaan - Single|2020|alag_aasmaan.mp3|alag_aasmaan.txt
+2|Arz Kiya Hai|Anuv Jain|Coke Studio Bharat Season 3|2025|arz_kiya_hai.mp3|arz_kiya_hai.txt
+3|Badtameez Dil|Benny Dayal, Shefali Alvares|Yeh Jawaani Hai Deewani|2013|badtameez_dil.mp3|badtameez_dil.txt
 ```
 
-### 4. Compile and run
+Make sure that each audio filename matches a file in `music/` and each lyrics filename matches a file in `lyrics/`. The program expects relative paths from the project folder and supports up to 100 song records.
 
-Open PowerShell or the VS Code terminal in the project directory.
+## Requirements
 
-Compile:
+- Windows
+- A C++ compiler with C++17 support, such as MinGW-w64 GCC
+- An audio player associated with your audio file type in Windows
+- Audio files and metadata configured as described above
+
+This version uses the Windows Shell to open each song in the default media application. It does not require FFmpeg, FFplay, or the Windows MCI API.
+
+## How to Compile and Run
+
+Open PowerShell in your project folder. For example:
 
 ```powershell
-g++ main.cpp -std=c++17 -o temp_music.exe
+cd D:\Learning\DSA\Music-Player
 ```
 
-Run:
+Compile the program:
 
 ```powershell
-.\temp_music.exe
+g++ main.cpp -std=c++17 -o temp_music.exe -lshell32
 ```
 
-The current implementation uses Windows commands for clearing the terminal and opening audio files, so it is designed for Windows.
+Run it if compilation succeeds:
 
-## 🔍 Searching and Sorting Algorithms
+```powershell
+if ($LASTEXITCODE -eq 0) { .\temp_music.exe }
+```
 
-### 1. Linear Search
+The `-std=c++17` flag enables C++17 features, including `std::filesystem`. The `-lshell32` flag links the Windows Shell library used by `ShellExecuteExA`.
 
-Linear Search checks each song record one by one. It is used for searching by title, artist, and album. Lyrics searching also checks the lyrics files one by one.
-
-**Time complexity:** `O(n)` comparisons for metadata searches, excluding string-comparison costs.
-
-### 2. Bubble Sort
-
-Bubble Sort compares adjacent song titles and swaps them when they are in the wrong alphabetical order. It is implemented using nested loops in the `bubbleSort()` function.
-
-**Time complexity:**
-- Best case: `O(n)` when the list is already sorted.
-- Average case: `O(n²)`.
-- Worst case: `O(n²)`.
-
-### 3. Binary Search
-
-Binary Search finds a song by exact title after arranging a copy of the music library alphabetically using the manual Bubble Sort implementation.
-
-It repeatedly checks the middle element and eliminates half of the remaining search range.
-
-**Search complexity:** `O(log n)` comparisons after sorting.
-
-**Important:** Since this implementation sorts a copy before each Binary Search, the complete operation, including sorting, takes `O(n²)` time in the worst case. The `O(log n)` complexity describes the search phase alone.
-
-## 🔤 Text Normalization
-
-The `normalize()` function converts letters to lowercase and removes spaces and non-alphanumeric characters before comparing text.
-
-For example, the following inputs normalize to the same text:
+## Main Menu
 
 ```text
-Phir Se Ud Chala
-phir...se ud chala
-PHIR-SE-UD-CHALA
+===== MUSIC PLAYER SEARCH SYSTEM =====
+1. Display All Songs
+2. Search by Song Title
+3. Search by Artist
+4. Search by Album
+5. Search by Lyrics Keyword
+6. Play a Song
+7. Create Queue and Play Songs
+8. Sort Songs by Title
+9. Binary Search by Exact Title
+10. Exit
 ```
 
-This makes searching less sensitive to capitalization and punctuation.
+## How Queue Playback Works
 
-## 🎧 How It Works
+1. Select **7. Create Queue and Play Songs**.
+2. The program displays the library and asks for song IDs separated by spaces.
+3. Enter IDs in the order you want to play them. For example:
 
-1. Loads song metadata from `songs.txt`.
-2. Displays a console menu.
-3. Performs the selected search or sorting operation.
-4. Reads lyrics files when searching lyrics keywords.
-5. Displays matching song details.
-6. Opens the corresponding audio file when playback is selected.
+   ```text
+   2 1 9 8
+   ```
 
-## 🚀 Future Improvements
+4. The program builds a singly linked list in that order.
+5. Each audio file is opened using the Windows default media player.
+6. When Windows provides a handle to the launched player process, the program waits for that process to close before opening the next queue item.
 
-- Add a linked-list-based playlist.
-- Implement a queue for upcoming songs.
-- Add song insertion and deletion.
-- Compare Linear Search and Binary Search performance.
-- Add playlist management and playback controls.
+### Important playback note
 
-## ⚠️ Notes
+The Windows default media application controls audio playback. Depending on the application, Windows may not provide a process handle—for example, when the file is handed to an already-running or single-instance app. In that case, the program asks you to press Enter in the console after closing the media player so it can continue to the next song. Queue advancement therefore depends on how the configured media application is launched by Windows.
 
-- This is a console-based project, not a graphical music player.
-- Audio playback opens the MP3 file in the default Windows audio application.
-- The music library and lyrics are stored locally.
-- The current version does not play audio directly inside the console.
-- Share only music and lyrics files that you have permission to distribute.
+This implementation does not provide in-program Previous, Pause, Resume, or Stop controls. Use the media player's own controls while a track is open.
 
-## 👨‍💻 Author
+## Data Structures
 
-Developed as a **Data Structures and Algorithms (DSA) Micro Project** using C++.
+### Array
+
+The library is stored in a fixed-size array:
+
+```cpp
+Song songs[MAX_SONGS];
+```
+
+The array allows the program to iterate over song records for display, searching, and sorting. `MAX_SONGS` is set to 100.
+
+### Singly Linked List
+
+The playback queue uses nodes containing a song and a pointer to the next node:
+
+```cpp
+struct QueueNode {
+    Song song;
+    QueueNode* next;
+};
+```
+
+- `front` points to the first queued song.
+- `rear` points to the last queued song.
+- `enqueue()` adds a song at the rear.
+- `dequeue()` removes a song from the front when clearing the queue.
+- `clearQueue()` releases the allocated nodes after playback or before building a new queue.
+
+A singly linked list is suitable for this version because queue playback proceeds forward only.
+
+## Algorithms
+
+### Linear Search
+
+Used for title, artist, album, and lyrics-keyword searches. The program checks each song until it finds matches.
+
+### Bubble Sort
+
+Used to arrange songs by normalized title. It compares adjacent titles and swaps them when they are out of order.
+
+### Binary Search
+
+Used to find a song by exact normalized title. The function first copies and sorts the library, then performs Binary Search on the sorted copy.
+
+### Text Normalization
+
+The `normalize()` function converts letters to lowercase and removes characters that are not alphanumeric. As a result, these inputs normalize to the same value:
+
+| Input | Normalized text |
+|---|---|
+| `Alag Aasmaan` | `alagaasmaan` |
+| `ALAG-AASMAAN!` | `alagaasmaan` |
+
+Normalization ignores capitalization, spacing, and punctuation; it does not remove or translate different letters. For example, `Phir Se Ud Chala` and `PHIR-SE-UD-CHALA` match after normalization.
+
+## Time Complexity
+
+Let **n** be the number of songs in the library.
+
+| Operation | Time complexity |
+|---|---:|
+| Display all songs | O(n) |
+| Linear search by title, artist, or album | O(n) comparisons (excluding string-comparison costs) |
+| Lyrics search | Depends on the total size of the lyrics files read; each listed lyrics file is checked |
+| Enqueue one song | O(1) |
+| Dequeue one song | O(1) |
+| Clear a queue with q nodes | O(q) |
+| Bubble Sort | O(n²) |
+| Binary Search after the function sorts a copy | O(n²) overall, dominated by Bubble Sort |
+| Binary Search on already sorted data | O(log n) comparisons |
+
+## Limitations
+
+- The program is Windows-specific because it uses `ShellExecuteExA` and Windows headers.
+- The library is limited to 100 song records.
+- The `songs.txt` file must follow the specified pipe-separated format.
+- Audio and lyrics files must be placed in the expected folders.
+- Playback advancement depends on how the Windows default media app launches and whether Windows returns a process handle.
+- If Windows does not provide a process handle, manual confirmation with Enter is required before the queue advances.
+- Binary Search only matches an exact normalized title; title and artist linear searches also support partial matches.
+- Queue entries are not saved as a playlist file.
+
+## Possible Future Improvements
+
+- Add a reliable playback process or library that reports when a track actually finishes.
+- Add pause, resume, stop, and previous-track functionality.
+- Save and load playlists.
+- Add song metadata editing and removal.
+- Add a graphical user interface, album artwork, and shuffle/repeat modes.
+- Replace the fixed-size song array with a dynamic container if a larger library is needed.
+
+## Learning Outcomes
+
+This project demonstrates:
+
+- C++ structures, arrays, pointers, and dynamic memory allocation.
+- Singly linked lists and queue operations.
+- File handling with text files.
+- Linear Search, Bubble Sort, and Binary Search.
+- String normalization and keyword matching.
+- Basic Windows integration for opening files in the default application.
+
+## Conclusion
+
+The Music Player Search System applies core DSA concepts in a practical C++ console project. It supports song and lyrics searches, sorting, exact-title lookup, and forward queue playback through the Windows default media application.
+
+**Project type:** DSA Micro Project  
+**Language:** C++  
+**Platform:** Windows  
+**Build standard:** C++17
